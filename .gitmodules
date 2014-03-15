@@ -2,3 +2,6 @@
 	path = armadillo
 	url = https://github.com/DASLaboratories/Armadillo.git
 	
+[submodule "lib/armadillo"]
+	path = lib/armadillo
+	url = https://github.com/DASLaboratories/Armadillo.git
