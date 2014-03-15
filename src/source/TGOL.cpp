@@ -1,6 +1,6 @@
 /** This file is distributed under the MIT License. For full text of the license see file named "LICENSE" in project's root directory.
   * Copyright (c) 2014 nabijaczleweli
-	* Designed in MinGW32 - works flawlessly there. For crashes / compilation faults on other compilers please contact the author.
+	* Designed in gcc 4.8.1-dw2 - works flawlessly there. For crashes / compilation faults on other compilers please contact the author.
 	* Contributors: nabijaczleweli(nabijaczleweli@gmail.com)
   */
 
@@ -179,7 +179,7 @@ int main() {
 				cout << '\n';
 			}
 			continue;
-		} else if(!line.find("?") || !line.find("huh")) {
+		} else if(!line.find("?")) {
 			cout << "Conway's Game of Life:\n\t"
 			           "Help:\n\t\t" // TODO : Maybe some kinda table with commands or somethin'?
 								   "\"q\" Does the cleanup an exits.\n\t\t"
