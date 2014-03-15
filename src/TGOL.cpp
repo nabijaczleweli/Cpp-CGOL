@@ -104,7 +104,7 @@ int main() {
 	string line;
 	while(true) {
 		getline(cin, line);
-		if(line == "q")
+		if(!line.find("q"))
 			break;
 		else if(!line.find("x+")) {
 			if(line.size() == 2)
