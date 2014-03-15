@@ -1,3 +1,0 @@
-[submodule "armadillo"]
-	path = lib/armadillo
-	url = https://github.com/DASLaboratories/Armadillo.git
