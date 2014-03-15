@@ -13,5 +13,5 @@
 *.la
 *.a
 
-#compiled executables
+# Compiled executables
 *.exe
