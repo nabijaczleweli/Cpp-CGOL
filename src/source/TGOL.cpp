@@ -1,3 +1,9 @@
+/** This file is distributed under the MIT License. For full text of the license see file named "LICENSE" in project's root directory.
+  * Copyright (c) 2014 nabijaczleweli
+	* Designed in MinGW32 - works flawlessly there. For crashes / compilation faults on other compilers please contact the author.
+	* Contributors: nabijaczleweli(nabijaczleweli@gmail.com)
+  */
+
 #include <iostream>
 #include <random>
 #include <ctime>
@@ -119,10 +125,10 @@ int main() {
 			cout << "\nNew dimensions: x = " << life_x << ", y = " << life_y << ".\n";
 			continue;
 		} else if(!line.find("t")) {
-			if(!isnumeric(line[1]))
+			if(line.size() == 1)
 				line += "10";
 			unsigned int got = atoi(line.substr(1).c_str());
-			for(unsigned int i = 0; i < got; ++i) {
+			for(unsigned int i = 1; i < got; ++i) {
 				pre_tick(the_map, life_x, life_y);
 				tick(the_map, life_x, life_y);
 			}
@@ -172,6 +178,26 @@ int main() {
 					cout << (the_map(y, x) ? '\262' : '\260');
 				cout << '\n';
 			}
+			continue;
+		} else if(!line.find("?") || !line.find("huh")) {
+			cout << "Conway's Game of Life:\n\t"
+			           "Help:\n\t\t" // TODO : Maybe some kinda table with commands or somethin'?
+								   "\"q\" Does the cleanup an exits.\n\t\t"
+									 "\"x+[NUMBER]\" Extends number of columns of the gamefield by NUMBER. NUMBER defaults to 10.\n\t\t"
+									 "\"y+[NUMBER]\" Extends number of rows of the gamefield by NUMBER. NUMBER defaults to 10.\n\t\t"
+									 "\"t[NUMBER]\" Ticks gamefield NUMBER times, then prints it. NUMBER defaults to 10.\n\t\t"
+									 "\"fs[[NUMBER1][, NUMBER2]]\" Sets cell at {x = NUMBER1, y = NUMBER2} to alive. Both NUMBER1 and NUMBER2 default to 10.\n\t\t"
+									 "\"fr[[NUMBER1][, NUMBER2]]\" Sets cell at {x = NUMBER1, y = NUMBER2} to dead. Both NUMBER1 and NUMBER2 default to 10.\n\t\t"
+									 "\"p\" Shows gamefield without ticking.\n\t\t"
+									 "\"<any other expression>\" Ticks the gamefield, then prints it.\n\t"
+								"Info:\n\t\t"
+								  "Follows standard Conway's rules of the Conway's game of life.\n\t\t"
+									"Field is randomly populated at the beginning.\n\t\t"
+									"Field automatically resizes itself as needed.\n\t"
+								"Authors:\n\t\t"
+								  "Nabijaczleweli: original authorism.\n\t\t"
+									"More to come?\n\t"
+								"Report bugs to <nabijaczlewei@gmail.com>\n";
 			continue;
 		}
 		pre_tick(the_map, life_x, life_y);
