@@ -1,3 +1,0 @@
-[submodule "lib/armadillo"]
-	path = lib/armadillo
-	url = https://github.com/nabijaczleweli/Armadillo.git
