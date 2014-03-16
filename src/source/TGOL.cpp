@@ -1,6 +1,6 @@
 /** This file is distributed under the MIT License. For full text of the license see file named "LICENSE" in project's root directory.
   * Copyright (c) 2014 nabijaczleweli
-	* Designed in gcc 4.8.1-dw2 - works flawlessly there. For crashes / compilation faults on other compilers please contact the author.
+	* Designed for gcc 4.8.1-dw2 - works flawlessly there. For crashes / compilation faults on other compilers please contact the author.
 	* Contributors: nabijaczleweli(nabijaczleweli@gmail.com)
   */
 
