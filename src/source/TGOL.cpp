@@ -1,8 +1,8 @@
-/** This file is distributed under the MIT License. For full text of the license see file named "LICENSE" in project's root directory.
-  * Copyright (c) 2014 nabijaczleweli
-	* Designed for gcc 4.8.1-dw2 - works flawlessly there. For crashes / compilation faults on other compilers please contact the author.
-	* Contributors: nabijaczleweli(nabijaczleweli@gmail.com)
-  */
+// This file is distributed under the MIT License. For full text of the license see file named "LICENSE" in project's root directory.
+// Copyright (c) 2014 nabijaczleweli
+//
+// Designed for gcc 4.8.1-dw2 - works flawlessly there. For crashes / compilation faults on other compilers please contact the author.
+// Contributors: nabijaczleweli (nabijaczleweli@gmail.com)
 
 #include <iostream>
 #include <random>
@@ -19,19 +19,40 @@ template<class T>
 void pre_tick(Mat<T> &, unsigned int &, unsigned int &);
 template<class T>
 unsigned int get_alive_neighbours(const Mat<T> &, const unsigned int &, const unsigned int &);
+pair<unsigned int, unsigned int> get_level_size(const string &);
+bool is_level_an_actual_level(const string &);
 
-int main() {
+int main(int, char * argv[]) {
 	cout.sync_with_stdio(false);
 	cin.sync_with_stdio(false);
-	bool (*isnumeric)(const char &) = [](const char & c){return (c >= '0' && c <= '9');};
+
+	string filename;
+	for(unsigned int idx = 1; argv[idx]; ++idx)
+		filename = argv[idx];
+	if(filename.size())
+		if(!is_level_an_actual_level(filename)) {
+			cout << '\"' << filename << "\" is not an actual level! Switching to auto-generate!\n\n";
+			filename.erase();
+			filename.shrink_to_fit();
+		}
+
 	unsigned int life_x = 60,
 	             life_y = 30;
+	if(filename.size()) {
+		auto size = get_level_size(filename);
+		life_x = size.first;
+		life_y = size.second;
+		cout << life_x << ',' << life_y;
+	}
 	Mat<char> the_map(life_y, life_x, fill::zeros);
 	srand(time(NULL));
 
-	for(unsigned int y = 0; y < life_y; ++y)
-		for(unsigned int x = 0; x < life_x; ++x)
-			the_map(y, x) = !(rand() % 9);
+	if(filename.size()) {
+
+	} else
+		for(unsigned int y = 0; y < life_y; ++y)
+			for(unsigned int x = 0; x < life_x; ++x)
+				the_map(y, x) = !(rand() % 9);
 	/*the_map(7, 2) = false; // Lightweight spaceship
 	the_map(7, 3) = true;
 	the_map(7, 4) = true;
@@ -138,10 +159,10 @@ int main() {
 				line += "10,10";
 			else if(!line.find(","))
 				line += ",10";
-			else if(!isnumeric(line[2])) {
+			else if(!isdigit(line[2])) {
 				line = line.substr(3);
 				line = "fs10" + line;
-			} else if(!isnumeric(line[line.find(",") + 1]))
+			} else if(!isdigit(line[line.find(",") + 1]))
 				line = line.substr(0, line.find(",") + 1) + "10";
 
 			unsigned int y = atoi(line.substr(line.find(",") + 1).c_str()),
@@ -158,10 +179,10 @@ int main() {
 				line += "10,10";
 			else if(!line.find(","))
 				line += ",10";
-			else if(!isnumeric(line[2])) {
+			else if(!isdigit(line[2])) {
 				line = line.substr(3);
 				line = "fr10" + line;
-			} else if(!isnumeric(line[line.find(",") + 1]))
+			} else if(!isdigit(line[line.find(",") + 1]))
 				line = line.substr(0, line.find(",") + 1) + "10";
 
 			unsigned int y = atoi(line.substr(line.find(",") + 1).c_str()),
@@ -210,7 +231,6 @@ int main() {
 			cout << '\n';
 		}
 	}
-	the_map.~Mat<typename remove_reference<decltype(the_map(0, 0))>::type>();
 }
 
 template<class T>
@@ -295,4 +315,52 @@ void pre_tick(Mat<T> & map, unsigned int & x_size, unsigned int & y_size) {
 			map = new_map;
 			return;
 		}
+}
+
+pair<unsigned int, unsigned int> get_level_size(const string & filename) {
+	ifstream input_file(filename);
+
+	input_file.ignore(6);
+	string temporary_input;
+	getline(input_file, temporary_input);
+	unsigned int x_size = atoi(temporary_input.c_str());
+
+	input_file.ignore(7);
+	getline(input_file, temporary_input);
+	unsigned int y_size = atoi(temporary_input.c_str());
+
+	return make_pair(x_size, y_size);
+}
+
+bool is_level_an_actual_level(const string & filename) {
+	ifstream input_file(filename);
+	bool not_ok = false;
+
+	not_ok |= input_file.get() != 'w';
+	not_ok |= input_file.get() != 'i';
+	not_ok |= input_file.get() != 'd';
+	not_ok |= input_file.get() != 't';
+	not_ok |= input_file.get() != 'h';
+	not_ok |= input_file.get() != '=';
+	while(input_file.peek() != '\n' && input_file.peek() != ifstream::traits_type::eof())
+		not_ok |= !isdigit(input_file.get());
+	not_ok |= input_file.get() != '\n';
+
+	not_ok |= input_file.get() != 'h';
+	not_ok |= input_file.get() != 'e';
+	not_ok |= input_file.get() != 'i';
+	not_ok |= input_file.get() != 'g';
+	not_ok |= input_file.get() != 'h';
+	not_ok |= input_file.get() != 't';
+	not_ok |= input_file.get() != '=';
+	while(input_file.peek() != '\n' && input_file.peek() != ifstream::traits_type::eof())
+		not_ok |= !isdigit(input_file.get());
+	not_ok |= input_file.get() != '\n';
+
+	while(input_file.peek() != ifstream::traits_type::eof()) {
+		int chr = input_file.get();
+		not_ok |= !(chr == '0' || chr == '1' || chr == '\n');
+	}
+
+	return !not_ok;
 }
