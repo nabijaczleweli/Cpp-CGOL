@@ -21,6 +21,7 @@ template<class T>
 unsigned int get_alive_neighbours(const Mat<T> &, const unsigned int &, const unsigned int &);
 pair<unsigned int, unsigned int> get_level_size(const string &);
 bool is_level_an_actual_level(const string &);
+void print_bad_information(const string & filename, unsigned int line, unsigned int character, const char * const message);
 
 int main(int, char * argv[]) {
 	cout.sync_with_stdio(false);
@@ -332,35 +333,96 @@ pair<unsigned int, unsigned int> get_level_size(const string & filename) {
 	return make_pair(x_size, y_size);
 }
 
-bool is_level_an_actual_level(const string & filename) {
+void print_bad_information(const string & filename, unsigned int line, unsigned int character, const char * const message) {
+	cerr << filename << ':' << line << ':' << character << ": " << message << '\n';
 	ifstream input_file(filename);
+	for(unsigned int curline = 0; curline < line; ++curline)
+		input_file.ignore(numeric_limits<streamsize>::max(), '\n');
+	string output_line;
+	getline(input_file, output_line);
+	cerr << output_line << '\n';
+	for(unsigned int i = 0; i < character; ++i)
+		cerr << ' ';
+	cerr << '^' << endl;
+}
+
+bool is_level_an_actual_level(const string & filename) {
+	#define TESTFILEFORCHARACTER(character_to_test_against)\
+	 if((chr = input_file.get()) != character_to_test_against) {\
+		 char * buffer = new char[35 + ((chr == '\n') * 4)];\
+		 memcpy(buffer, "error: \'", 8);\
+		 buffer[8] = character_to_test_against;\
+		 memcpy(buffer + 9, "\' expected, but \'", 17);\
+		 if(chr != '\n') {\
+		 	buffer[26] = chr;\
+		 	memcpy(buffer + 27, "\' found", 8);\
+		 } else\
+		 	memcpy(buffer + 25, "newline found", 14);\
+		 print_bad_information(filename, curline, curchar, buffer);\
+		 delete[] buffer;\
+		 ++curchar;\
+		 not_ok = true;\
+	 }
+
+	ifstream input_file(filename);
+	unsigned int curline = 0, curchar = 0;
 	bool not_ok = false;
+	int chr;
 
-	not_ok |= input_file.get() != 'w';
-	not_ok |= input_file.get() != 'i';
-	not_ok |= input_file.get() != 'd';
-	not_ok |= input_file.get() != 't';
-	not_ok |= input_file.get() != 'h';
-	not_ok |= input_file.get() != '=';
-	while(input_file.peek() != '\n' && input_file.peek() != ifstream::traits_type::eof())
-		not_ok |= !isdigit(input_file.get());
-	not_ok |= input_file.get() != '\n';
+	for(unsigned int i = 0; i < 6; ++i)
+		TESTFILEFORCHARACTER("width="[i])
+	while(input_file.peek() != '\n' && input_file.peek() != ifstream::traits_type::eof()) {
+		if(!isdigit(chr = input_file.get())) {
+			char * buffer = new char[49];
+			memcpy(buffer, "error: decimal character expected, but \'", 40);
+			buffer[40] = chr;
+			memcpy(buffer + 41, "\' found", 9);
+			print_bad_information(filename, curline, curchar, buffer);
+			delete[] buffer;
+			not_ok = true;
+		}
+		++curchar;
+	}
+	TESTFILEFORCHARACTER('\n')
+	++curline;
+	curchar = 0;
 
-	not_ok |= input_file.get() != 'h';
-	not_ok |= input_file.get() != 'e';
-	not_ok |= input_file.get() != 'i';
-	not_ok |= input_file.get() != 'g';
-	not_ok |= input_file.get() != 'h';
-	not_ok |= input_file.get() != 't';
-	not_ok |= input_file.get() != '=';
-	while(input_file.peek() != '\n' && input_file.peek() != ifstream::traits_type::eof())
-		not_ok |= !isdigit(input_file.get());
-	not_ok |= input_file.get() != '\n';
+	for(unsigned int i = 0; i < 7; ++i)
+		TESTFILEFORCHARACTER("height="[i])
+	while(input_file.peek() != '\n' && input_file.peek() != ifstream::traits_type::eof()) {
+		if(!isdigit(chr = input_file.get())) {
+			char * buffer = new char[49];
+			memcpy(buffer, "error: decimal character expected, but \'", 40);
+			buffer[40] = chr;
+			memcpy(buffer + 41, "\' found", 9);
+			print_bad_information(filename, curline, curchar, buffer);
+			delete[] buffer;
+			not_ok = true;
+		}
+		++curchar;
+	}
+	TESTFILEFORCHARACTER('\n')
+	++curline;
+	curchar = 0;
 
 	while(input_file.peek() != ifstream::traits_type::eof()) {
-		int chr = input_file.get();
-		not_ok |= !(chr == '0' || chr == '1' || chr == '\n');
+		chr = input_file.get();
+		if(!(chr == '0' || chr == '1' || chr == '\n')) {
+			char * buffer = new char[59];
+			memcpy(buffer, "error: binary character or newline expected, but \'", 50);
+			buffer[50] = chr;
+			memcpy(buffer + 51, "\' found", 9);
+			print_bad_information(filename, curline, curchar, buffer);
+			delete[] buffer;
+			not_ok = true;
+		} else if(chr == '\n') {
+			++curline;
+			curchar = 0;
+		} else
+			++curchar;
 	}
 
 	return !not_ok;
+
+	#undef TESTFILEFORCHARACTER
 }
