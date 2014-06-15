@@ -15,6 +15,8 @@ CPP = c++
 CPPPAR = -s -Os -std=c++11 -Wall -Wextra -pipe -fomit-frame-pointer
 
 
+.PHONY: all clean
+
 all : TGOL.o
 	$(CPP) $(CPPPAR) TGOL.o -o../TGOL
 
