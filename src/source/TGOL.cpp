@@ -49,7 +49,7 @@ int main(int, char * argv[]) {
 	srand(time(NULL));
 
 	if(filename.size()) {
-
+// Load it
 	} else
 		for(unsigned int y = 0; y < life_y; ++y)
 			for(unsigned int x = 0; x < life_x; ++x)
@@ -194,6 +194,26 @@ int main(int, char * argv[]) {
 				the_map.resize(life_y, life_x = x);
 			the_map(y, x) = false;
 			continue;
+		} else if(!line.find("fx")) {
+			line.erase(remove_if(line.begin(), line.end(), [](const char & x){return isspace(x);}), line.end());
+			if(line.size() == 2)
+				line += "10,10";
+			else if(!line.find(","))
+				line += ",10";
+			else if(!isdigit(line[2])) {
+				line = line.substr(3);
+				line = "fr10" + line;
+			} else if(!isdigit(line[line.find(",") + 1]))
+				line = line.substr(0, line.find(",") + 1) + "10";
+
+			unsigned int y = atoi(line.substr(line.find(",") + 1).c_str()),
+			             x = atoi(line.substr(2).c_str());
+			if(life_y < y)
+				the_map.resize(life_y = y, life_x);
+			if(life_x < x)
+				the_map.resize(life_y, life_x = x);
+			the_map(y, x) = !the_map(y, x);
+			continue;
 		} else if(!line.find("p")) {
 			for(unsigned int y = 0; y < life_y; ++y) {
 				for(unsigned int x = 0; x < life_x; ++x)
@@ -201,7 +221,7 @@ int main(int, char * argv[]) {
 				cout << '\n';
 			}
 			continue;
-		} else if(!line.find("?")) {
+		} else if(!line.find("?") || !line.find("help")) {
 			cout << "Conway's Game of Life:\n\t"
 			           "Help:\n\t\t" // TODO : Maybe some kinda table with commands or somethin'?
 								   "\"q\" Does the cleanup an exits.\n\t\t"
@@ -210,6 +230,7 @@ int main(int, char * argv[]) {
 									 "\"t[NUMBER]\" Ticks gamefield NUMBER times, then prints it. NUMBER defaults to 10.\n\t\t"
 									 "\"fs[[NUMBER1][, NUMBER2]]\" Sets cell at {x = NUMBER1, y = NUMBER2} to alive. Both NUMBER1 and NUMBER2 default to 10.\n\t\t"
 									 "\"fr[[NUMBER1][, NUMBER2]]\" Sets cell at {x = NUMBER1, y = NUMBER2} to dead. Both NUMBER1 and NUMBER2 default to 10.\n\t\t"
+									 "\"fx[[NUMBER1][, NUMBER2]]\" Sets cell at {x = NUMBER1, y = NUMBER2} it's one's complement. Both NUMBER1 and NUMBER2 default to 10.\n\t\t"
 									 "\"p\" Shows gamefield without ticking.\n\t\t"
 									 "\"<any other expression>\" Ticks the gamefield, then prints it.\n\t"
 								"Info:\n\t\t"
@@ -347,30 +368,44 @@ void print_bad_information(const string & filename, unsigned int line, unsigned 
 }
 
 bool is_level_an_actual_level(const string & filename) {
-	#define TESTFILEFORCHARACTER(character_to_test_against)\
-	 if((chr = input_file.get()) != character_to_test_against) {\
-		 char * buffer = new char[35 + ((chr == '\n') * 4)];\
-		 memcpy(buffer, "error: \'", 8);\
-		 buffer[8] = character_to_test_against;\
-		 memcpy(buffer + 9, "\' expected, but \'", 17);\
-		 if(chr != '\n') {\
-		 	buffer[26] = chr;\
-		 	memcpy(buffer + 27, "\' found", 8);\
-		 } else\
-		 	memcpy(buffer + 25, "newline found", 14);\
-		 print_bad_information(filename, curline, curchar, buffer);\
-		 delete[] buffer;\
-		 ++curchar;\
-		 not_ok = true;\
-	 }
+#define TESTFILEFORCHARACTER(character_to_test_against)\
+ if((chr = input_file.get()) != character_to_test_against) {\
+	 char * buffer = new char[35 + ((chr == '\n') * 4) + ((character_to_test_against == '\n') * 4)];\
+	 if(character_to_test_against != '\n') {\
+	 	memcpy(buffer, "error: \'", 8);\
+	 	buffer[8] = character_to_test_against;\
+	 	buffer[9] = '\'';\
+	 } else\
+	 	memcpy(buffer, "error: newline", 14);\
+	 memcpy(buffer + 10 + ((character_to_test_against == '\n') * 4), " expected, but \'", 16);\
+	 if(chr != '\n') {\
+	 	buffer[26 + ((character_to_test_against == '\n') * 4)] = chr;\
+	 	memcpy(buffer + 27 + ((character_to_test_against == '\n') * 4), "\' found", 8);\
+	 } else\
+	 	memcpy(buffer + 25 + ((character_to_test_against == '\n') * 4), "newline found", 14);\
+	 print_bad_information(filename, curline, curchar, buffer);\
+	 delete[] buffer;\
+	 if(chr != '\n')\
+	  ++curchar;\
+	 else {\
+		++curline;\
+		curchar = 0;\
+	 }\
+	 not_ok = true;\
+ }
+#define TESTFILEFORCHARACTERS(characters_to_test_against)\
+ {\
+	 string str = characters_to_test_against;\
+	 for(unsigned int i = 0; i < str.size(); ++i)\
+	 	TESTFILEFORCHARACTER(str[i]);\
+ }
 
 	ifstream input_file(filename);
 	unsigned int curline = 0, curchar = 0;
 	bool not_ok = false;
 	int chr;
 
-	for(unsigned int i = 0; i < 6; ++i)
-		TESTFILEFORCHARACTER("width="[i])
+	TESTFILEFORCHARACTERS("width=")
 	while(input_file.peek() != '\n' && input_file.peek() != ifstream::traits_type::eof()) {
 		if(!isdigit(chr = input_file.get())) {
 			char * buffer = new char[49];
@@ -387,8 +422,7 @@ bool is_level_an_actual_level(const string & filename) {
 	++curline;
 	curchar = 0;
 
-	for(unsigned int i = 0; i < 7; ++i)
-		TESTFILEFORCHARACTER("height="[i])
+	TESTFILEFORCHARACTERS("height=")
 	while(input_file.peek() != '\n' && input_file.peek() != ifstream::traits_type::eof()) {
 		if(!isdigit(chr = input_file.get())) {
 			char * buffer = new char[49];
@@ -424,5 +458,6 @@ bool is_level_an_actual_level(const string & filename) {
 
 	return !not_ok;
 
-	#undef TESTFILEFORCHARACTER
+#undef TESTFILEFORCHARACTER
+#undef TESTFILEFORCHARACTERS
 }
