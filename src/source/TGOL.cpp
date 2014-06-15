@@ -21,7 +21,7 @@ template<class T>
 unsigned int get_alive_neighbours(const Mat<T> &, const unsigned int &, const unsigned int &);
 pair<unsigned int, unsigned int> get_level_size(const string &);
 bool is_level_an_actual_level(const string &);
-void print_bad_information(const string & filename, unsigned int line, unsigned int character, const char * const message);
+void print_bad_information(const string &, unsigned int, unsigned int, const char * const);
 
 int main(int, char * argv[]) {
 	cout.sync_with_stdio(false);
@@ -37,23 +37,30 @@ int main(int, char * argv[]) {
 			filename.shrink_to_fit();
 		}
 
-	unsigned int life_x = 60,
-	             life_y = 30;
+	unsigned int life_x = 60, life_y = 30;
 	if(filename.size()) {
 		auto size = get_level_size(filename);
 		life_x = size.first;
 		life_y = size.second;
-		cout << life_x << ',' << life_y;
 	}
 	Mat<char> the_map(life_y, life_x, fill::zeros);
-	srand(time(NULL));
 
 	if(filename.size()) {
-// Load it
-	} else
+		ifstream input_file(filename);
+		input_file.ignore(numeric_limits<streamsize>::max(), '\n');
+		input_file.ignore(numeric_limits<streamsize>::max(), '\n');
+		//  This may be unsafe! Protect it? Or just ignore it?
+		for(unsigned int x = 0; x < life_x; ++x) {
+			for(unsigned int y = 0; y < life_y; ++y)
+				the_map(y, x) = input_file.get() - '0';
+			input_file.ignore();
+		}
+	} else {
+		srand(time(NULL));
 		for(unsigned int y = 0; y < life_y; ++y)
 			for(unsigned int x = 0; x < life_x; ++x)
 				the_map(y, x) = !(rand() % 9);
+	}
 	/*the_map(7, 2) = false; // Lightweight spaceship
 	the_map(7, 3) = true;
 	the_map(7, 4) = true;
@@ -124,6 +131,7 @@ int main(int, char * argv[]) {
 	the_map(10, 40) = true;
 	the_map(10, 41) = true;
 	the_map(10, 42) = true;*/
+	pre_tick(the_map, life_x, life_y);
 	for(unsigned int y = 0; y < life_y; ++y) {
 		for(unsigned int x = 0; x < life_x; ++x)
 			cout << (the_map(y, x) ? '\262' : '\260');
@@ -221,6 +229,37 @@ int main(int, char * argv[]) {
 				cout << '\n';
 			}
 			continue;
+		} else if(!line.find("load")) {
+			line.erase(remove_if(line.begin(), line.end(), [](const char & x){return isspace(x);}), line.end());
+			if(line.size() == 4)
+				line += filename;
+			if(line.size() == 4) {
+				cout << "No filename specifed!\n\n" << flush;
+				continue;
+			}
+			if(!is_level_an_actual_level(line.c_str() + 4)) {
+				cout << '\"' << line.c_str() + 4 << "\" is not an actual level! Switching to auto-generate!\n\n" << flush;
+				filename.erase();
+				filename.shrink_to_fit();
+				continue;
+			}
+			filename = line.c_str() + 4;
+			auto size = get_level_size(filename);
+			life_x = size.first;
+			life_y = size.second;
+			typename remove_reference<decltype(the_map)>::type new_map(life_y, life_x, fill::zeros);
+			the_map.~Mat<typename remove_reference<decltype(the_map(0, 0))>::type>();
+			the_map = new_map;
+			ifstream input_file(filename);
+			input_file.ignore(numeric_limits<streamsize>::max(), '\n');
+			input_file.ignore(numeric_limits<streamsize>::max(), '\n');
+			//  This may be unsafe! Protect it? Or just ignore it?
+			for(unsigned int x = 0; x < life_x; ++x) {
+				for(unsigned int y = 0; y < life_y; ++y)
+					the_map(y, x) = input_file.get() - '0';
+				input_file.ignore();
+			}
+			pre_tick(the_map, life_x + 2, life_y + 2);
 		} else if(!line.find("?") || !line.find("help")) {
 			cout << "Conway's Game of Life:\n\t"
 			           "Help:\n\t\t" // TODO : Maybe some kinda table with commands or somethin'?
@@ -232,6 +271,7 @@ int main(int, char * argv[]) {
 									 "\"fr[[NUMBER1][, NUMBER2]]\" Sets cell at {x = NUMBER1, y = NUMBER2} to dead. Both NUMBER1 and NUMBER2 default to 10.\n\t\t"
 									 "\"fx[[NUMBER1][, NUMBER2]]\" Sets cell at {x = NUMBER1, y = NUMBER2} it's one's complement. Both NUMBER1 and NUMBER2 default to 10.\n\t\t"
 									 "\"p\" Shows gamefield without ticking.\n\t\t"
+									 "\"load[filename]\" Loads gamefield from [filename], or if not specified reloads the gamefield."
 									 "\"<any other expression>\" Ticks the gamefield, then prints it.\n\t"
 								"Info:\n\t\t"
 								  "Follows standard Conway's rules of the Conway's game of life.\n\t\t"
